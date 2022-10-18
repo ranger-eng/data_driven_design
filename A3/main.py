@@ -1,5 +1,5 @@
 import numpy as np
-import matplotlib as plt
+import matplotlib.pyplot as plt
 import pandas as pd
 
 np.set_printoptions(formatter={'float': lambda x: "{0:0.3f}".format(x)})
@@ -16,6 +16,9 @@ np.set_printoptions(formatter={'float': lambda x: "{0:0.3f}".format(x)})
 N = 3
 M = 4
 O = 75
+N0 = 25
+N1 = 25
+N2 = 25
 
 T = np.zeros([N,O])
 X = np.array([])
@@ -39,6 +42,7 @@ term1 = np.linalg.inv(term1)
 term2 = np.dot(X,T.T)
 W = np.dot(term1,term2)
 W = W.T
+
 
 R = np.dot(W,X)
 confused = np.zeros([N,N])
@@ -95,3 +99,92 @@ for i in range (0,25,1):
     if (tmp[0] == 2):
         correct2 = correct2 + 1
 print("Using least squares method for training, class2 has accuracy: ", correct2/25)
+
+#################
+# HW 4
+# c. consider the LDA approach using the same data. Due to strong 
+# correlation between features 2 and 0 in class 1 plot the scatter 
+# of all classes in th 0-2 feature plane.
+
+# features 0 and 2 for class 0
+temp0 = pd.read_csv("./data/hw3_class0.dat", sep=" ", header=None).to_numpy()[:,[0,2]]
+temp1 = pd.read_csv("./data/hw3_class1.dat", sep=" ", header=None).to_numpy()[:,[0,2]]
+temp2 = pd.read_csv("./data/hw3_class2.dat", sep=" ", header=None).to_numpy()[:,[0,2]]
+
+f0_c0 = temp0[:,0]
+f2_c0 = temp0[:,1]
+f0_c1 = temp1[:,0]
+f2_c1 = temp1[:,1]
+f0_c2 = temp2[:,0]
+f2_c2 = temp2[:,1]
+plt.scatter(f0_c0,f2_c0,c="red")
+plt.scatter(f0_c1,f2_c1,c="blue")
+plt.scatter(f0_c2,f2_c2,c="green")
+plt.legend(["class0","class1","class2"])
+plt.title("Scatter plot of three classes in feature 0, feature 2 plane")
+# plt.show()
+
+#################
+# compute SW
+mean_0 = np.mean(X0,axis=1)
+mean_1 = np.mean(X1,axis=1)
+mean_2 = np.mean(X2,axis=1)
+mean_total = 1/O*(N0*mean_0 + N1*mean_1 + N2*mean_2)
+print(mean_0, mean_1, mean_2, mean_total)
+
+X0_minus_mean = np.zeros([M,N0])
+X1_minus_mean = np.zeros([M,N1])
+X2_minus_mean = np.zeros([M,N2])
+
+for i in range(0,M,1):
+    for j in range(0,N0,1):
+        X0_minus_mean[i,j] = X0[i,j]-mean_0[i]
+    for j in range(0,N1,1):
+        X1_minus_mean[i,j] = X1[i,j]-mean_1[i]
+    for j in range(0,N2,1):
+        X2_minus_mean[i,j] = X2[i,j]-mean_2[i]
+
+S0 = np.dot(X0_minus_mean,X0_minus_mean.T)
+S1 = np.dot(X1_minus_mean,X1_minus_mean.T)
+S2 = np.dot(X2_minus_mean,X2_minus_mean.T)
+
+SW = S0+S1+S2
+
+#################
+# compute SB
+SB = np.zeros([M,M])
+for i in range(0,M,1):
+    for j in range(0,M,1):
+        SB[i,j] = N0*(mean_0[i]-mean_total[i])*(mean_0[j]-mean_total[j]) + \
+        N1*(mean_1[i]-mean_total[i])*(mean_1[j]-mean_total[j]) + \
+        N2*(mean_2[i]-mean_total[i])*(mean_2[j]-mean_total[j])
+
+#################
+# find the eigenvalues and eigenvectors of SW^-1*SB
+SW_inv = np.linalg.solve(SW,np.identity(M))
+SW_inv_SB = np.dot(SW_inv,SB)
+
+J,W_LDA = np.linalg.eig(SW_inv_SB)
+J = J[0]
+W_LDA = W_LDA[:,0]
+
+print("J:",J,"W_LDA:",W_LDA)
+
+R_LDA = np.dot(W_LDA,X)
+confused_LDA = np.zeros([N,N])
+for i in range (0,O,1):
+	#predicted
+	arg= np.amax (R_LDA[i])
+	tmp= np.where(R_LDA[i]==np.amax(R_LDA[i]))
+	qr= tmp[0]
+	#actual
+	arg= np.amax (T[:,i])
+	tmp= np.where(T[:,i]==np.amax(T[:,i]))
+	qt= tmp[0]
+
+	confused_LDA[qr[0],qt[0]]= confused_LDA[qr[0],qt[0]]+1
+	#print(qt[0],qr[0])
+
+print('actual horizontal vs predicted vertical');
+for i in range (0,N,1):
+	print( confused_LDA[i,:]/25.0)
