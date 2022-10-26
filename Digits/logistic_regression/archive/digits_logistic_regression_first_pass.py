@@ -1,6 +1,7 @@
 from sklearn import datasets
 import matplotlib.pyplot as plt
 import numpy as np
+from time import time
 
 M = 64+1 # features
 K = 10 #classes
@@ -113,7 +114,7 @@ t   = np.empty((K,0))
 y   = np.zeros((K,N), dtype=np.float128)
 GRAD_E = np.zeros((M,K))
 
-eta = .01
+eta = .01*6
 
 # populate phi and t
 phi = np.append(phi,RAW0,axis=1); t = np.append(t,t0,axis=1)
@@ -129,6 +130,7 @@ phi = np.append(phi,RAW9,axis=1); t = np.append(t,t9,axis=1)
 phi = phi/100
 
 for ITER in range(0,20000,1):
+    timer = time()
 	#compute a's
     a= np.matmul(wt,phi)
 
@@ -158,8 +160,13 @@ for ITER in range(0,20000,1):
         for m in range(0,M,1):
             wt[k,m]  = wt[k,m] - eta*GRAD_E[m,k]
 
-    print(ITER,E)
+    # save weight
+    if((ITER % 1000)==1):
+        with open('weights{0}.npy'.format(ITER), 'wb') as f:
+            np.save(f, wt)
+            f.close()
 
-# save weights
-with open('weights.npy', 'wb') as f:
-    np.save(f, wt)
+    dt = time() - timer
+    print(ITER,E,dt,np.shape(wt)[0],np.shape(wt)[1],np.unwrap(wt))
+
+
