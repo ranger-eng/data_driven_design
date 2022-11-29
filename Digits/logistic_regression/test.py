@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import csv
 
-directory = '/zaphod/backup.cloud/ranger-storage/Uml/Data_drive_Modeling/EECE.Data_Driven_Modeling/Digits/'
+directory = './results/'
 lines = 20000
 
 P = np.array([.10,.25,.50,.75])
